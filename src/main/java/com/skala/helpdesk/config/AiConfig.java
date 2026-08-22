@@ -54,6 +54,9 @@ public class AiConfig {
                 .defaultSystem(systemPrompt)
                 .defaultAdvisors(
                         audit,                                               // order 0   — 감사(가장 바깥)
+                        // [주의] SafeGuardAdvisor 는 prompt().getContents() — 시스템 메시지를 포함한
+                        // 프롬프트 전체를 검사한다(1.1.8 바이트코드 확인). system.st 에 아래 민감어를
+                        // 원문 그대로 쓰면 모든 요청이 자가 차단된다.
                         SafeGuardAdvisor.builder()                           // order 100 — 입력 차단
                                 .sensitiveWords(List.of("주민등록번호", "카드번호", "비밀번호"))
                                 .failureResponse("죄송합니다. 민감정보가 포함된 요청은 처리할 수 없습니다.")
