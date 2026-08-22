@@ -5,13 +5,16 @@ import java.util.Map;
 
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skala.helpdesk.rag.IngestService;
+import com.skala.helpdesk.repository.TicketRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,10 +31,12 @@ public class AdminController {
 
     private final IngestService ingestService;
     private final VectorStore vectorStore;
+    private final TicketRepository tickets;
 
-    public AdminController(IngestService ingestService, VectorStore vectorStore) {
+    public AdminController(IngestService ingestService, VectorStore vectorStore, TicketRepository tickets) {
         this.ingestService = ingestService;
         this.vectorStore = vectorStore;
+        this.tickets = tickets;
     }
 
     @PostMapping("/ingest")
@@ -57,5 +62,23 @@ public class AdminController {
                 "score", d.getScore(),
                 "preview", d.getText().substring(0, Math.min(160, d.getText().length()))
         )).toList();
+    }
+
+    // ── 승인 게이트 — 승인은 사람만. 이 엔드포인트는 도구 목록에 없으므로 모델이 부를 수 없다. ──
+
+    @GetMapping("/tickets/pending")
+    @Operation(summary = "승인 대기 티켓 목록", description = "도구가 접수(PENDING)한 교환·환불 티켓을 담당자가 확인한다.")
+    public List<TicketRepository.Ticket> pendingTickets() {
+        return tickets.pending();
+    }
+
+    @PostMapping("/tickets/{no}/approve")
+    @Operation(summary = "티켓 승인 (사람 전용)",
+            description = "되돌리기 어려운 행동의 확정은 사람이 한다 — 승인 게이트의 마지막 단계.")
+    public ResponseEntity<TicketRepository.Ticket> approve(
+            @Parameter(description = "티켓 번호", example = "T-0001") @PathVariable String no) {
+        return tickets.approve(no)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
