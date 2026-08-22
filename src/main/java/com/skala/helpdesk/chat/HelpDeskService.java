@@ -73,7 +73,7 @@ public class HelpDeskService {
      * 대화 ID 규칙 — 테넌트·사용자·세션을 한 곳에서 만든다.
      * 잘못 만들면 남의 대화가 섞인다: 사용자별·세션별로 반드시 격리.
      */
-    private String conversationId(String userId, String sessionId) {
+    public String conversationId(String userId, String sessionId) {
         return "%s:%s:%s".formatted(TENANT, userId, sessionId);
     }
 }
