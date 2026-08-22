@@ -15,6 +15,7 @@ zip -r -q "$OUT" . \
   -x '*/.gradle/*' -x '.gradle/*' \
   -x '*/.git/*' -x '.git/*' \
   -x '.env' -x '*.zip' \
+  -x 'docs/PLAN.md' -x 'docs/GIT_WORKFLOW.md' \
   -x '*/.DS_Store' -x '.DS_Store'
 
 echo "✅ 생성됨: $OUT"
