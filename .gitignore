@@ -43,3 +43,7 @@ replay_pid*
 
 # ===== 제출물 zip (레포엔 코드만) =====
 *.zip
+
+# 내부 계획 문서는 로컬 전용 — 깃헙에 올리지 않는다
+docs/PLAN.md
+docs/GIT_WORKFLOW.md
