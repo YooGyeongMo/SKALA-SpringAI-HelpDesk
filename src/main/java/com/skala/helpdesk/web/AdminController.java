@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.ai.chat.memory.ChatMemory;
+
+import com.skala.helpdesk.chat.HelpDeskService;
 import com.skala.helpdesk.rag.IngestService;
 import com.skala.helpdesk.repository.TicketRepository;
 
@@ -32,11 +35,16 @@ public class AdminController {
     private final IngestService ingestService;
     private final VectorStore vectorStore;
     private final TicketRepository tickets;
+    private final ChatMemory chatMemory;
+    private final HelpDeskService helpDeskService;
 
-    public AdminController(IngestService ingestService, VectorStore vectorStore, TicketRepository tickets) {
+    public AdminController(IngestService ingestService, VectorStore vectorStore,
+                           TicketRepository tickets, ChatMemory chatMemory, HelpDeskService helpDeskService) {
         this.ingestService = ingestService;
         this.vectorStore = vectorStore;
         this.tickets = tickets;
+        this.chatMemory = chatMemory;
+        this.helpDeskService = helpDeskService;
     }
 
     @PostMapping("/ingest")
@@ -80,5 +88,18 @@ public class AdminController {
         return tickets.approve(no)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/history")
+    @Operation(summary = "대화 이력 확인 (메모리 검증 창구)",
+            description = "해당 사용자·세션의 메모리에 실제로 무엇이 저장됐는지 본다. 멀티턴·격리 검증의 근거.")
+    public List<Map<String, String>> history(
+            @Parameter(example = "user1") @RequestParam(defaultValue = "user1") String userId,
+            @Parameter(example = "session-1") @RequestParam String sessionId) {
+        return chatMemory.get(helpDeskService.conversationId(userId, sessionId)).stream()
+                .map(m -> Map.of(
+                        "role", m.getMessageType().getValue(),
+                        "text", m.getText()))
+                .toList();
     }
 }
