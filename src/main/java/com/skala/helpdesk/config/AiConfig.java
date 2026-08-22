@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 
 import com.skala.helpdesk.advisor.AuditAdvisor;
+import com.skala.helpdesk.advisor.TokenMeterAdvisor;
 
 /**
  * Phase 1 — ChatClient 하나에 Advisor 체인 전체를 기본값으로 걸어 둔다.
@@ -49,11 +50,13 @@ public class AiConfig {
                                      ChatMemory chatMemory,
                                      HelpDeskProperties props,
                                      AuditAdvisor audit,
+                                     TokenMeterAdvisor tokenMeter,
                                      @Value("classpath:prompts/system.st") Resource systemPrompt) {
         return builder
                 .defaultSystem(systemPrompt)
                 .defaultAdvisors(
                         audit,                                               // order 0   — 감사(가장 바깥)
+                        tokenMeter,                                          // order 10  — 토큰·지연 계측
                         // [주의] SafeGuardAdvisor 는 prompt().getContents() — 시스템 메시지를 포함한
                         // 프롬프트 전체를 검사한다(1.1.8 바이트코드 확인). system.st 에 아래 민감어를
                         // 원문 그대로 쓰면 모든 요청이 자가 차단된다.

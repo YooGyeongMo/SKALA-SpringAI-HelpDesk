@@ -15,6 +15,7 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.2
+          max-tokens: 800            # 비용 공격(초장문 유도) 상한 — 상담 답변 5문장에는 충분
       embedding:
         options:
           model: text-embedding-3-small     # 1536 차원 — vectorstore dimensions 와 일치
@@ -45,6 +46,12 @@ helpdesk:
     max-messages: 20
   fallback:
     model: gpt-4o-mini
+  budget:
+    max-avg-tokens-per-query: 3000   # 질의당 평균 토큰 상한(N2) — stats 가 준수 여부 판정
+  cache:
+    # SimpleVectorStore 코사인 스케일 실측(동일 0.63 / 반품 유사 0.51 / 교환 0.38 / 무관 0.26)
+    # → 0.50: 같은 의도 재질문은 적중, 다른 의도는 차단. 애매하면 캐시를 쓰지 않는다.
+    threshold: 0.50
 
 server:
   port: 8080

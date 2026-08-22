@@ -13,11 +13,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
+
 import org.springframework.ai.chat.memory.ChatMemory;
 
 import com.skala.helpdesk.chat.HelpDeskService;
+import com.skala.helpdesk.config.HelpDeskProperties;
+import com.skala.helpdesk.ops.SemanticCacheService;
 import com.skala.helpdesk.rag.IngestService;
 import com.skala.helpdesk.repository.TicketRepository;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,14 +45,22 @@ public class AdminController {
     private final TicketRepository tickets;
     private final ChatMemory chatMemory;
     private final HelpDeskService helpDeskService;
+    private final MeterRegistry registry;
+    private final HelpDeskProperties props;
+    private final SemanticCacheService cacheService;
 
     public AdminController(IngestService ingestService, VectorStore vectorStore,
-                           TicketRepository tickets, ChatMemory chatMemory, HelpDeskService helpDeskService) {
+                           TicketRepository tickets, ChatMemory chatMemory,
+                           HelpDeskService helpDeskService, MeterRegistry registry,
+                           HelpDeskProperties props, SemanticCacheService cacheService) {
         this.ingestService = ingestService;
         this.vectorStore = vectorStore;
         this.tickets = tickets;
         this.chatMemory = chatMemory;
         this.helpDeskService = helpDeskService;
+        this.registry = registry;
+        this.props = props;
+        this.cacheService = cacheService;
     }
 
     @PostMapping("/ingest")
@@ -88,6 +104,52 @@ public class AdminController {
         return tickets.approve(no)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "토큰·지연·도구 지표 요약 (운영자 관찰 창구)",
+            description = "'어제 비용이 왜 늘었지?' 에 답하는 창구 — 질의 수·토큰 합계·질의당 평균 토큰(상한 판정)·지연 P50/P95·도구 호출 수.")
+    public Map<String, Object> stats() {
+        double prompt = counterValue("ai.tokens", "type", "prompt");
+        double completion = counterValue("ai.tokens", "type", "completion");
+        double queries = counterValue("ai.queries", null, null);
+        double avgTokens = queries > 0 ? (prompt + completion) / queries : 0;
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("queries", (long) queries);
+        out.put("promptTokens", (long) prompt);
+        out.put("completionTokens", (long) completion);
+        out.put("avgTokensPerQuery", Math.round(avgTokens));
+        out.put("avgTokensBudget", props.budget().maxAvgTokensPerQuery());
+        out.put("withinBudget", avgTokens <= props.budget().maxAvgTokensPerQuery());
+
+        Timer latency = registry.find("ai.latency").timer();
+        if (latency != null) {
+            Map<String, Object> lat = new LinkedHashMap<>();
+            lat.put("count", latency.count());
+            lat.put("meanMs", Math.round(latency.mean(java.util.concurrent.TimeUnit.MILLISECONDS)));
+            lat.put("maxMs", Math.round(latency.max(java.util.concurrent.TimeUnit.MILLISECONDS)));
+            for (var pv : latency.takeSnapshot().percentileValues()) {
+                lat.put("p" + Math.round(pv.percentile() * 100) + "Ms",
+                        Math.round(pv.value(java.util.concurrent.TimeUnit.MILLISECONDS)));
+            }
+            out.put("latency", lat);
+        }
+
+        Map<String, Long> toolCalls = new LinkedHashMap<>();
+        registry.find("ai.tool.calls").counters().forEach(c ->
+                toolCalls.merge(c.getId().getTag("tool") + ":" + c.getId().getTag("result"),
+                        (long) c.count(), Long::sum));
+        out.put("toolCalls", toolCalls);
+        out.put("semanticCache", cacheService.stats());
+        return out;
+    }
+
+    private double counterValue(String name, String tagKey, String tagValue) {
+        Counter c = tagKey == null
+                ? registry.find(name).counter()
+                : registry.find(name).tag(tagKey, tagValue).counter();
+        return c == null ? 0 : c.count();
     }
 
     @GetMapping("/history")

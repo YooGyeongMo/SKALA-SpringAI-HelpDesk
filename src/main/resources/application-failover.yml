@@ -1,0 +1,8 @@
+# 장애 주입 프로파일(N4 검증 전용) — 주 모델을 존재하지 않는 모델로 바꿔 폴백 동작을 확인한다.
+#   SPRING_PROFILES_ACTIVE=failover scripts/run.sh   (또는 scripts/test-fallback.sh)
+spring:
+  ai:
+    openai:
+      chat:
+        options:
+          model: gpt-none-exist-chaos   # 일부러 잘못된 모델 — 호출 즉시 실패

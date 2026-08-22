@@ -21,9 +21,11 @@ public class ToolAuditAspect {
     private static final Logger audit = LoggerFactory.getLogger("AI_TOOL_AUDIT");
 
     private final ToolCallTracker tracker;
+    private final io.micrometer.core.instrument.MeterRegistry registry;
 
-    public ToolAuditAspect(ToolCallTracker tracker) {
+    public ToolAuditAspect(ToolCallTracker tracker, io.micrometer.core.instrument.MeterRegistry registry) {
         this.tracker = tracker;
+        this.registry = registry;
     }
 
     @Around("@annotation(org.springframework.ai.tool.annotation.Tool)")
@@ -38,9 +40,11 @@ public class ToolAuditAspect {
             Object result = joinPoint.proceed();
             audit.info("tool={} args={} status=OK elapsedMs={}",
                     tool, args, (System.nanoTime() - started) / 1_000_000);
+            registry.counter("ai.tool.calls", "tool", tool, "result", "ok").increment();
             return result;
         } catch (Throwable e) {
             audit.error("tool={} args={} status=FAIL error={}", tool, args, e.toString());
+            registry.counter("ai.tool.calls", "tool", tool, "result", "fail").increment();
             throw e;
         }
     }
