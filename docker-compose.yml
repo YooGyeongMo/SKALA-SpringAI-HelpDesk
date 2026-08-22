@@ -1,0 +1,22 @@
+# RAG 벡터 저장소 — pgvector 확장이 켜진 PostgreSQL
+#   scripts/setup.sh  (= docker compose up -d + 헬스체크 대기)
+services:
+  pgvector:
+    image: pgvector/pgvector:pg17
+    container_name: helpdesk-pgvector
+    environment:
+      POSTGRES_DB: springai
+      POSTGRES_USER: springai
+      POSTGRES_PASSWORD: springai
+    ports:
+      - "5432:5432"
+    volumes:
+      - helpdesk-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U springai"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  helpdesk-pgdata:

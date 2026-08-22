@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# 커밋 메시지 규칙 검사 — docs/GIT_WORKFLOW.md 참조
+set -euo pipefail
+msg_file="$1"
+first_line=$(head -n1 "$msg_file")
+
+# Merge/Revert 커밋은 통과
+case "$first_line" in
+  Merge*|Revert*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|test|docs|chore|refactor|ci|style)(\([^)]+\))?: .+'
+if ! [[ "$first_line" =~ $pattern ]]; then
+  echo "❌ 커밋 메시지 규칙 위반: '$first_line'"
+  echo "   형식: feat|fix|test|docs|chore|refactor|ci|style: 한 줄 요약"
+  echo "   예:   feat: Phase 2 — 문서 인제스트 파이프라인"
+  exit 1
+fi
+
+# AI 기여자 표기 금지 (프로젝트 규칙)
+if grep -qiE 'co-authored-by:.*(claude|anthropic|ai)|generated with.*(claude|ai)' "$msg_file"; then
+  echo "❌ 커밋 메시지에 AI 표기를 넣지 않는다"
+  exit 1
+fi

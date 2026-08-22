@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# 커밋 전 자동 검사 — 설치: scripts/install-hooks.sh (또는 scripts/setup.sh 가 자동 설치)
+set -euo pipefail
+
+fail() { echo "❌ pre-commit 차단: $1"; exit 1; }
+
+# 1) .env 류 파일 커밋 차단
+if git diff --cached --name-only | grep -qE '(^|/)\.env(\..+)?$'; then
+  git diff --cached --name-only | grep -E '(^|/)\.env' | grep -vq '\.env\.example$' \
+    && fail ".env 파일은 커밋할 수 없다 (API 키 유출)"
+fi
+
+# 2) 스테이징된 내용에서 API 키 패턴 검사
+if git diff --cached -U0 | grep -E '^\+' | grep -qE 'sk-(proj-)?[A-Za-z0-9_-]{20,}'; then
+  fail "OpenAI API 키로 보이는 문자열이 스테이징에 포함됨"
+fi
+
+# 3) 5MB 초과 파일 차단 (빌드 산출물·바이너리 실수 방지)
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  size=$(stat -f%z "$f" 2>/dev/null || stat -c%s "$f" 2>/dev/null || echo 0)
+  [ "$size" -gt 5242880 ] && fail "5MB 초과 파일: $f (${size} bytes)"
+done < <(git diff --cached --name-only --diff-filter=AM)
+
+# 4) 자바·설정 변경 시 컴파일 검증 (빠른 안전망 — 전체 build 는 CI 가 한다)
+if git diff --cached --name-only | grep -qE '\.(java|gradle)$|application.*\.ya?ml$'; then
+  ./gradlew compileJava -q || fail "컴파일 실패 — 고치고 다시 커밋"
+fi
+
+echo "✅ pre-commit 통과"

@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.16'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.skala'
+version = '1.0.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+// 편집기·OS 가 달라도 한글 주석·프롬프트가 깨지지 않게 인코딩을 고정한다.
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(Test).configureEach { systemProperty 'file.encoding', 'UTF-8' }
+tasks.named('bootRun') { jvmArgs = ['-Dfile.encoding=UTF-8'] }
+
+repositories { mavenCentral() }
+
+ext {
+    springAiVersion = '1.1.8'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'      // SSE 스트리밍 (Flux)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'          // 도구 감사 Aspect · @Retryable
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'         // pgvector 연결
+    implementation 'org.springframework.retry:spring-retry'                    // 폴백 (@Retryable/@Recover)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'   // /swagger-ui.html
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'                 // /actuator/prometheus
+    runtimeOnly 'org.postgresql:postgresql'
+
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-advisors-vector-store'    // QuestionAnswerAdvisor
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'     // PDF · DOCX · MD · TXT
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+dependencyManagement {
+    imports { mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}" }
+}
+
+tasks.named('test') { useJUnitPlatform() }
+
+springBoot { mainClass = 'com.skala.helpdesk.HelpDeskApplication' }

@@ -1,0 +1,45 @@
+# ===== 비밀 — 절대 커밋 금지 =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===== Gradle / 빌드 산출물 =====
+build/
+bin/
+out/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== IDE =====
+# VSCode (공유할 설정만 예외로 허용)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+# Eclipse/STS
+.classpath
+.project
+.settings/
+.factorypath
+
+# ===== OS =====
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+
+# ===== 로그·임시 =====
+*.log
+hs_err_pid*
+replay_pid*
+
+# ===== 제출물 zip (레포엔 코드만) =====
+*.zip

@@ -1,0 +1,11 @@
+{
+  // VSCode가 이 폴더를 열면 자동으로 설치를 권장하는 확장 목록
+  "recommendations": [
+    "vscjava.vscode-java-pack",        // Extension Pack for Java (LSP·디버거·테스트·Maven)
+    "vmware.vscode-boot-dev-pack",     // Spring Boot Extension Pack (부트 대시보드·yml 자동완성)
+    "vscjava.vscode-gradle",           // Gradle for Java
+    "redhat.vscode-yaml",              // application.yml 스키마 검증
+    "ms-azuretools.vscode-docker",     // docker-compose 관리
+    "humao.rest-client"                // .http 파일로 API 수동 테스트 (선택)
+  ]
+}

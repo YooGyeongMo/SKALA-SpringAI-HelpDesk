@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: springai-final-helpdesk
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/springai
+    username: springai
+    password: springai
+
+  ai:
+    openai:
+      # 키는 소스에 넣지 않는다.  .env 의 OPENAI_API_KEY 를 scripts/run.sh 가 로드한다.
+      api-key: ${OPENAI_API_KEY:not-set}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.2
+      embedding:
+        options:
+          model: text-embedding-3-small     # 1536 차원 — vectorstore dimensions 와 일치
+
+    vectorstore:
+      pgvector:
+        initialize-schema: true             # 기동 시 vector_store 테이블·인덱스 자동 생성
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+
+    # 운영에서는 프롬프트 원문 로깅을 끈다 — 개인정보가 로그에 그대로 쌓인다.
+    chat:
+      observations:
+        log-prompt: false
+      client:
+        observations:
+          log-prompt: false
+
+# 공급자·모델·임계값은 전부 설정으로 뺀다 — 코드에 상수를 남기지 않는다.
+helpdesk:
+  rag:
+    top-k: 5
+    threshold: 0.62
+  memory:
+    max-messages: 20
+  fallback:
+    model: gpt-4o-mini
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+  default-produces-media-type: application/json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: springai-final-helpdesk
+
+logging:
+  level:
+    com.skala.helpdesk: DEBUG
+    AI_TOOL_AUDIT: INFO

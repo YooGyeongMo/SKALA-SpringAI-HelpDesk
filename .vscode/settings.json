@@ -1,0 +1,17 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "disabled",
+  "files.encoding": "utf8",
+  "editor.formatOnSave": false,
+  "[java]": {
+    "editor.tabSize": 4
+  },
+  "[yaml]": {
+    "editor.tabSize": 2
+  },
+  "files.exclude": {
+    "**/.gradle": true,
+    "**/build": true,
+    "**/bin": true
+  }
+}
