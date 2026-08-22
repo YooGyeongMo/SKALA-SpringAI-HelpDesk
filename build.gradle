@@ -33,6 +33,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'   // /swagger-ui.html
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'                 // /actuator/prometheus
     runtimeOnly 'org.postgresql:postgresql'
+    // macOS(Apple Silicon)에서 webflux 기동 시 netty DNS 리졸버 ERROR 로그 제거
+    runtimeOnly 'io.netty:netty-resolver-dns-native-macos::osx-aarch_64'
 
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.springframework.ai:spring-ai-advisors-vector-store'    // QuestionAnswerAdvisor
