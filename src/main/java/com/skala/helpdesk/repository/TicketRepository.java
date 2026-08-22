@@ -39,6 +39,13 @@ public class TicketRepository {
                 .toList();
     }
 
+    public List<Ticket> approved() {
+        return tickets.values().stream()
+                .filter(t -> t.status() == Status.APPROVED)
+                .sorted((a, b) -> a.no().compareTo(b.no()))
+                .toList();
+    }
+
     public List<Ticket> findByUser(String userId) {
         return tickets.values().stream()
                 .filter(t -> t.userId().equals(userId))

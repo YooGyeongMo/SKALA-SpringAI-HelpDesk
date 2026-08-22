@@ -96,6 +96,12 @@ public class AdminController {
         return tickets.pending();
     }
 
+    @GetMapping("/tickets/approved")
+    @Operation(summary = "승인 완료 티켓 목록", description = "담당자가 승인(APPROVED)한 티켓. 운영 콘솔이 새로고침돼도 처리 이력이 유지된다.")
+    public List<TicketRepository.Ticket> approvedTickets() {
+        return tickets.approved();
+    }
+
     @PostMapping("/tickets/{no}/approve")
     @Operation(summary = "티켓 승인 (사람 전용)",
             description = "되돌리기 어려운 행동의 확정은 사람이 한다 — 승인 게이트의 마지막 단계.")

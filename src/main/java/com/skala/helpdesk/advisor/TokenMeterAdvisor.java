@@ -1,5 +1,6 @@
 package com.skala.helpdesk.advisor;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -37,6 +38,10 @@ public class TokenMeterAdvisor implements CallAdvisor, StreamAdvisor {
         this.latency = Timer.builder("ai.latency")
                 .description("모델 호출 왕복 지연 (Advisor 체인 안쪽 전체)")
                 .publishPercentiles(0.5, 0.95)          // P95 응답 5초 이내(N1) 판정 근거
+                // 백분위 히스토그램은 기본 2분마다 만료된다. 데모·채점 중 질의 공백이 생겨도
+                // P95 가 0 으로 초기화되지 않도록 만료를 1시간으로 늘리고 버퍼를 하나로 고정한다.
+                .distributionStatisticExpiry(Duration.ofHours(1))
+                .distributionStatisticBufferLength(1)
                 .register(registry);
         this.promptTokens = registry.counter("ai.tokens", "type", "prompt");
         this.completionTokens = registry.counter("ai.tokens", "type", "completion");
