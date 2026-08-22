@@ -3,8 +3,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "▶ 깃 훅 설치"
-bash scripts/install-hooks.sh
+echo "▶ 깃 훅 설치 (개발용, 없어도 실행에는 지장 없음)"
+bash scripts/install-hooks.sh || true
 
 echo "▶ pgvector 컨테이너 기동 (docker compose up -d)"
 docker compose up -d
