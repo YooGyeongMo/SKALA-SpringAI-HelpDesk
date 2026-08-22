@@ -38,7 +38,9 @@ spring:
 helpdesk:
   rag:
     top-k: 5
-    threshold: 0.62
+    # /api/admin/chunks 실측으로 조정한 값 — 관련 질문 상위 0.315~0.44, 무관 질문 0.16~0.245.
+    # 교재 기본 0.62 는 이 한국어 코퍼스(text-embedding-3-small)에서 전부 차단되어 하향.
+    threshold: 0.28
   memory:
     max-messages: 20
   fallback:
